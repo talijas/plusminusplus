@@ -1,0 +1,668 @@
+<!doctype html>
+<html lang="hr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#e8f5ff">
+<title>plusminusplus</title>
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="./icons/icon-192.png">
+<style>
+:root{color-scheme:light;--blue:#2275c9;--ink:#173650;--muted:#627b90;
+--line:#dfebf4;--pale:#eaf5ff;--red:#ae394d;--green:#147553}
+*{box-sizing:border-box}
+body{margin:0;background:#f5faff;color:var(--ink);
+font:16px/1.5 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+button,input,select{font:inherit}
+button,a,input,select{touch-action:manipulation}
+button{cursor:pointer;border:0;border-radius:12px;padding:12px 17px;
+background:var(--blue);color:white;font-weight:650}
+button:hover{filter:brightness(.96)}
+button:disabled{opacity:.55;cursor:wait}
+button.secondary{background:var(--pale);color:var(--ink)}
+button.danger{background:#fff0f2;color:var(--red)}
+input,select{width:100%;padding:12px;border:1px solid #bfd5e6;
+border-radius:11px;background:white;color:var(--ink);min-width:0}
+:focus-visible{outline:3px solid #80c4ff;outline-offset:3px}
+label{display:grid;gap:6px;font-size:14px;font-weight:600}
+h1,h2,h3,p{margin:0}
+h1{font-size:26px;letter-spacing:-1px}
+h2{font-size:21px;margin-bottom:16px}
+h3{font-size:17px}
+small,.muted{color:var(--muted)}
+small{font-size:13px}
+[hidden]{display:none!important}
+.shell{max-width:1120px;margin:auto;padding:26px}
+.brand{display:flex;align-items:center;gap:12px}
+.logo{width:48px;height:48px;flex-shrink:0}
+header{display:flex;align-items:center;justify-content:space-between;
+gap:16px;flex-wrap:wrap;margin-bottom:26px}
+.card{background:white;border:1px solid var(--line);border-radius:22px;
+padding:24px;box-shadow:0 8px 35px #1d639305}
+.auth{max-width:470px;margin:7vh auto}
+.auth .brand{margin-bottom:25px}
+.stack{display:grid;gap:16px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.spread{justify-content:space-between}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:20px 0}
+.stat{padding:20px;border-radius:18px;background:white;border:1px solid var(--line)}
+.stat:first-child{background:var(--pale)}
+.value{font-size:clamp(23px,3vw,34px);font-weight:750;letter-spacing:-1px;
+overflow-wrap:anywhere;margin-top:5px}
+.income{color:var(--green)} .expense{color:var(--red)}
+.full{grid-column:1/-1}
+.toolbar{display:grid;grid-template-columns:1fr 180px;gap:12px;margin:18px 0}
+.entry{display:flex;align-items:center;justify-content:space-between;
+gap:14px;padding:16px 0;border-bottom:1px solid var(--line)}
+.entry:last-child{border-bottom:0}
+.entry-title{font-weight:650;overflow-wrap:anywhere}
+.entry-detail{font-size:13px;color:var(--muted)}
+.entry-right{text-align:right;flex-shrink:0}
+.entry-right button{font-size:12px;padding:5px 9px;margin-top:5px}
+.empty{text-align:center;padding:34px 10px;color:var(--muted)}
+.bar{height:10px;background:var(--pale);border-radius:9px;overflow:hidden;margin-top:8px}
+.bar span{display:block;height:100%;background:#66b5f1;border-radius:9px}
+.category{margin-top:15px}
+.notice{padding:12px 15px;background:var(--pale);border-radius:12px;font-size:14px}
+#message{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
+background:#173650;color:white;padding:13px 20px;border-radius:12px;
+z-index:10;max-width:calc(100% - 32px);box-shadow:0 8px 24px #17365033}
+footer{text-align:center;font-size:13px;color:var(--muted);padding:28px 0}
+#authError{color:var(--red);font-size:14px}
+@media(max-width:720px){
+.shell{padding:16px}.grid{grid-template-columns:1fr}.card{padding:19px}
+.stats{gap:8px}.stat{padding:12px}.value{font-size:21px}
+.toolbar{grid-template-columns:1fr}h1{font-size:22px}
+.auth{margin:4vh auto}.entry{gap:8px}
+}
+@media(max-width:390px){.stats{grid-template-columns:1fr}.value{font-size:27px}}
+</style>
+</head>
+<body>
+<div class="shell">
+<section id="auth" class="card auth">
+  <div class="brand">
+    <svg class="logo" viewBox="0 0 64 64" aria-label="plusminusplus logo" role="img">
+      <rect width="64" height="64" rx="20" fill="#e5f3ff"/>
+      <path d="M12 23h16m-8-8v16m17 1h15M24 46h16m-8-8v16"
+        stroke="#2275c9" stroke-width="5" stroke-linecap="round"/>
+    </svg>
+    <div><h1>plusminusplus</h1><small>Mali unosi. Jasnija slika.</small></div>
+  </div>
+  <h2 id="authTitle">Tvoj novac, na tvom uređaju.</h2>
+  <p class="muted" id="authIntro"></p>
+  <form id="authForm" class="stack" style="margin-top:22px">
+    <label>Lozinka
+      <input id="password" type="password" required autocomplete="current-password">
+    </label>
+    <label id="confirmWrap">Ponovi lozinku
+      <input id="confirmPassword" type="password" autocomplete="new-password">
+    </label>
+    <p id="authError" role="alert"></p>
+    <button id="authSubmit" type="submit">Stvori lokalni novčanik</button>
+  </form>
+  <p class="notice" style="margin-top:20px">
+    Bez računa na internetu. Podaci su šifrirani tvojom lozinkom.
+    Zaboravljenu lozinku nije moguće obnoviti.
+  </p>
+  <button id="restoreAuth" type="button" class="secondary" style="margin-top:16px">
+    Uvezi sigurnosnu kopiju
+  </button>
+</section>
+
+<main id="app" hidden>
+  <header>
+    <div class="brand">
+      <svg class="logo" viewBox="0 0 64 64" aria-hidden="true">
+        <rect width="64" height="64" rx="20" fill="#e5f3ff"/>
+        <path d="M12 23h16m-8-8v16m17 1h15M24 46h16m-8-8v16"
+          stroke="#2275c9" stroke-width="5" stroke-linecap="round"/>
+      </svg>
+      <div><h1>plusminusplus</h1><small>Više jasnoće. Manje brige.</small></div>
+    </div>
+    <button id="lock" class="secondary">Zaključaj</button>
+  </header>
+
+  <div class="row spread">
+    <div><h2 style="margin-bottom:2px">Pregled mjeseca</h2>
+      <p class="muted">Sve na jednom mjestu, čak i bez interneta.</p></div>
+    <label>Mjesec <input id="month" type="month" required></label>
+  </div>
+
+  <section class="stats" aria-label="Mjesečni sažetak">
+    <div class="stat"><small>Razlika u mjesecu</small><div id="balance" class="value"></div></div>
+    <div class="stat"><small>Prihodi</small><div id="income" class="value income"></div></div>
+    <div class="stat"><small>Troškovi</small><div id="expense" class="value expense"></div></div>
+  </section>
+
+  <div class="grid">
+    <section class="card">
+      <h2 id="entryHeading">Dodaj transakciju</h2>
+      <form id="entryForm" class="stack">
+        <div class="grid">
+          <label>Vrsta
+            <select id="type">
+              <option value="expense">Trošak</option>
+              <option value="income">Prihod</option>
+            </select>
+          </label>
+          <label>Iznos (€)
+            <input id="amount" type="text" inputmode="decimal"
+              placeholder="0,00" maxlength="14" required>
+          </label>
+        </div>
+        <div class="grid">
+          <label>Kategorija <select id="category"></select></label>
+          <label>Datum <input id="date" type="date" required></label>
+        </div>
+        <label>Opis <span class="muted">(neobavezno)</span>
+          <input id="note" maxlength="150" placeholder="Npr. kupnja namirnica">
+        </label>
+        <div class="row">
+          <button id="saveEntry" type="submit">Spremi transakciju</button>
+          <button id="cancelEdit" type="button" class="secondary" hidden>Odustani</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="card">
+      <h2>Mjesečni budžet</h2>
+      <p id="budgetSummary" class="muted"></p>
+      <div class="bar"><span id="budgetBar"></span></div>
+      <form id="budgetForm" class="stack" style="margin-top:20px">
+        <label>Limit troškova za odabrani mjesec (€)
+          <input id="budget" type="text" inputmode="decimal"
+            placeholder="Npr. 1.000,00" maxlength="14">
+        </label>
+        <small>Unesi 0 ili ostavi prazno za uklanjanje limita.</small>
+        <button type="submit" class="secondary">Spremi budžet</button>
+      </form>
+      <h3 style="margin-top:25px">Troškovi po kategorijama</h3>
+      <div id="categories"></div>
+    </section>
+
+    <section class="card full">
+      <div class="row spread">
+        <h2 style="margin:0">Transakcije</h2>
+        <span id="count" class="muted"></span>
+      </div>
+      <div class="toolbar">
+        <label>Pretraži
+          <input id="search" type="search" placeholder="Opis ili kategorija">
+        </label>
+        <label>Prikaži
+          <select id="filter">
+            <option value="all">Sve transakcije</option>
+            <option value="expense">Troškovi</option>
+            <option value="income">Prihodi</option>
+          </select>
+        </label>
+      </div>
+      <div id="entries"></div>
+    </section>
+
+    <section class="card full">
+      <h2>Tvoji podaci</h2>
+      <p class="muted">
+        Podaci se spremaju samo u ovaj preglednik. Brisanje podataka preglednika
+        može ukloniti novčanik. Sigurnosnu kopiju čuvaj izvan ovog uređaja.
+      </p>
+      <div class="row" style="margin-top:18px">
+        <button id="backup">Preuzmi šifriranu kopiju</button>
+        <button id="restore" class="secondary">Uvezi kopiju</button>
+        <button id="csv" class="secondary">Izvezi mjesec u CSV</button>
+      </div>
+      <p style="margin-top:12px"><small>
+        Sigurnosna kopija uključuje sve mjesece i budžete.
+        CSV je nešifrirana datoteka za tablične programe.
+        Novčanik se automatski zaključava nakon 5 minuta neaktivnosti.
+      </small></p>
+    </section>
+  </div>
+  <footer>plusminusplus · EUR · Bez oglasa i praćenja<br><span id="offlineStatus" role="status">Offline pristup priprema se nakon prvog online otvaranja.</span></footer>
+</main>
+</div>
+
+<input id="restoreFile" type="file" accept=".json,application/json" hidden>
+<div id="message" role="status" hidden></div>
+
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const STORAGE = "plusminusplus.v1";
+const ITERATIONS = 600000;
+const expenseCategories = ["Hrana","Stanovanje","Prijevoz","Računi",
+  "Zdravlje","Kupnja","Zabava","Putovanja","Obrazovanje","Ostalo"];
+const incomeCategories = ["Plaća","Honorar","Poklon","Prodaja","Ostalo"];
+let key = null, vault = null, data = null, editId = null;
+let busy = false, idleTimer, messageTimer;
+const money = cents => new Intl.NumberFormat("hr-HR",{
+  style:"currency",currency:"EUR"
+}).format(cents/100);
+const today = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+};
+const escapeHTML = value => String(value).replace(/[&<>"']/g,
+  c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const bytes64 = bytes => {
+  let binary = "";
+  for(let i = 0; i < bytes.length; i += 8192)
+    binary += String.fromCharCode(...bytes.subarray(i, i + 8192));
+  return btoa(binary);
+};
+const from64 = value => Uint8Array.from(atob(value), c => c.charCodeAt(0));
+
+function notify(text){
+  $("message").textContent = text;
+  $("message").hidden = false;
+  clearTimeout(messageTimer);
+  messageTimer = setTimeout(()=> $("message").hidden = true, 5000);
+}
+function readStored(){
+  return localStorage.getItem(STORAGE);
+}
+function showAuth(){
+  let exists = false;
+  try { exists = !!readStored(); }
+  catch {
+    $("authError").textContent = "Preglednik ne dopušta lokalnu pohranu.";
+    $("authSubmit").disabled = true;
+  }
+  $("authIntro").textContent = exists
+    ? "Otključaj svoj lokalni novčanik."
+    : "Postavi lozinku od najmanje 10 znakova. Sačuvaj je na sigurnom.";
+  $("authSubmit").textContent = exists ? "Otključaj" : "Stvori lokalni novčanik";
+  $("confirmWrap").hidden = exists;
+  $("confirmPassword").required = !exists;
+  $("password").autocomplete = exists ? "current-password" : "new-password";
+  $("password").minLength = exists ? 1 : 10;
+  $("auth").hidden = false;
+  $("app").hidden = true;
+}
+function validDate(value){
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const d = new Date(value+"T12:00:00Z");
+  return Number.isFinite(d.getTime()) && d.toISOString().slice(0,10) === value;
+}
+function validateData(d){
+  if(!d || d.version !== 1 || !Array.isArray(d.entries) ||
+     d.entries.length > 100000 || !d.budgets ||
+     typeof d.budgets !== "object" || Array.isArray(d.budgets))
+    throw Error("Neispravni podaci.");
+  const ids = new Set();
+  for(const e of d.entries){
+    if(typeof e.id !== "string" || ids.has(e.id) ||
+       !["income","expense"].includes(e.type) ||
+       !Number.isSafeInteger(e.amount) || e.amount <= 0 || e.amount > 999999999 ||
+       !validDate(e.date) || typeof e.note !== "string" || e.note.length > 150 ||
+       !(e.type === "income" ? incomeCategories : expenseCategories).includes(e.category))
+      throw Error("Neispravna transakcija.");
+    ids.add(e.id);
+  }
+  for(const [month, amount] of Object.entries(d.budgets)){
+    if(!/^\d{4}-(0[1-9]|1[0-2])$/.test(month) ||
+       !Number.isSafeInteger(amount) || amount < 0 || amount > 999999999)
+      throw Error("Neispravan budžet.");
+  }
+}
+function parseVault(raw){
+  const v = JSON.parse(raw);
+  if(!v || v.version !== 1 || v.iterations !== ITERATIONS ||
+     typeof v.salt !== "string" || typeof v.iv !== "string" ||
+     typeof v.ciphertext !== "string" ||
+     from64(v.salt).length !== 16 || from64(v.iv).length !== 12 ||
+     from64(v.ciphertext).length < 16)
+    throw Error("Neispravna sigurnosna kopija.");
+  return v;
+}
+async function derive(password, salt){
+  const material = await crypto.subtle.importKey(
+    "raw",new TextEncoder().encode(password),"PBKDF2",false,["deriveKey"]);
+  return crypto.subtle.deriveKey(
+    {name:"PBKDF2",salt,iterations:ITERATIONS,hash:"SHA-256"},
+    material,{name:"AES-GCM",length:256},false,["encrypt","decrypt"]);
+}
+async function decrypt(v, candidateKey){
+  const plain = await crypto.subtle.decrypt(
+    {name:"AES-GCM",iv:from64(v.iv)},candidateKey,from64(v.ciphertext));
+  const result = JSON.parse(new TextDecoder().decode(plain));
+  validateData(result);
+  return result;
+}
+async function persist(next){
+  validateData(next);
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ciphertext = await crypto.subtle.encrypt(
+    {name:"AES-GCM",iv},key,new TextEncoder().encode(JSON.stringify(next)));
+  const updated = {...vault,iv:bytes64(iv),
+    ciphertext:bytes64(new Uint8Array(ciphertext))};
+  localStorage.setItem(STORAGE,JSON.stringify(updated));
+  vault = updated;
+  data = next;
+}
+function armLock(){
+  clearTimeout(idleTimer);
+  if(key) idleTimer = setTimeout(lock,5*60*1000);
+}
+function lock(){
+  if(busy){ armLock(); return; }
+  key = null; data = null; vault = null; editId = null;
+  clearTimeout(idleTimer);
+  $("password").value = "";
+  $("confirmPassword").value = "";
+  $("authError").textContent = "";
+  $("entries").replaceChildren();
+  $("categories").replaceChildren();
+  for(const id of ["balance","income","expense","budgetSummary","count"])
+    $(id).textContent = "";
+  $("entryForm").reset();
+  $("budgetForm").reset();
+  $("search").value = "";
+  $("entryHeading").textContent = "Dodaj transakciju";
+  $("saveEntry").textContent = "Spremi transakciju";
+  $("cancelEdit").hidden = true;
+  showAuth();
+}
+async function mutate(fn, message){
+  if(busy || !data) return;
+  busy = true;
+  try {
+    const next = structuredClone(data);
+    fn(next);
+    await persist(next);
+    render();
+    if(message) notify(message);
+    return true;
+  } catch(error){
+    notify("Spremanje nije uspjelo. Provjeri slobodan prostor i dopuštenja preglednika.");
+    return false;
+  } finally { busy = false; armLock(); }
+}
+function parseAmount(text, allowZero = false){
+  let s = text.trim().replace(/\s/g,"");
+  // Prihvaća 1234,56, 1234.56 i hrvatski zapis 1.234,56.
+  if(s.includes(",")) s = s.replace(/\./g,"").replace(",",".");
+  if(!/^\d{1,7}(\.\d{1,2})?$/.test(s))
+    throw Error("Unesi iznos s najviše dvije decimale, npr. 12,50.");
+  const [whole, fraction=""] = s.split(".");
+  const cents = Number(whole)*100 + Number(fraction.padEnd(2,"0"));
+  if(!Number.isSafeInteger(cents) || cents > 999999999 ||
+     cents < (allowZero ? 0 : 1))
+    throw Error("Iznos mora biti između 0,01 i 9.999.999,99 €.");
+  return cents;
+}
+function setCategories(){
+  const list = $("type").value === "income" ? incomeCategories : expenseCategories;
+  $("category").replaceChildren(...list.map(name => new Option(name,name)));
+}
+function resetEntry(){
+  editId = null;
+  $("entryForm").reset();
+  $("date").value = today();
+  setCategories();
+  $("entryHeading").textContent = "Dodaj transakciju";
+  $("saveEntry").textContent = "Spremi transakciju";
+  $("cancelEdit").hidden = true;
+}
+function monthEntries(){
+  return data.entries.filter(e => e.date.slice(0,7) === $("month").value);
+}
+function render(){
+  if(!data) return;
+  const month = $("month").value;
+  const entries = monthEntries();
+  const sum = type => entries.filter(e=>e.type===type).reduce((a,e)=>a+e.amount,0);
+  const income = sum("income"), expense = sum("expense");
+  $("income").textContent = money(income);
+  $("expense").textContent = money(expense);
+  $("balance").textContent = money(income-expense);
+  const budget = data.budgets[month] || 0;
+  $("budget").value = budget ? (budget/100).toFixed(2).replace(".",",") : "";
+  $("budgetSummary").textContent = budget
+    ? (expense > budget
+      ? `Prekoračenje: ${money(expense-budget)}. Limit: ${money(budget)}.`
+      : `Preostalo ${money(budget-expense)} od ${money(budget)}.`)
+    : "Postavi limit i prati koliko ti ostaje za ovaj mjesec.";
+  $("budgetBar").style.width = budget ? Math.min(expense/budget*100,100)+"%" : "0%";
+  $("budgetBar").style.background = budget && expense > budget ? "#cb6374" : "#66b5f1";
+  const totals = expenseCategories.map(category => ({
+    category,amount:entries.filter(e=>e.type==="expense"&&e.category===category)
+      .reduce((a,e)=>a+e.amount,0)
+  })).filter(e=>e.amount).sort((a,b)=>b.amount-a.amount);
+  $("categories").innerHTML = totals.length ? totals.map(e=>`
+    <div class="category">
+      <div class="row spread"><span>${escapeHTML(e.category)}</span>
+      <strong>${money(e.amount)}</strong></div>
+      <div class="bar"><span style="width:${e.amount/expense*100}%"></span></div>
+    </div>`).join("") : '<p class="muted" style="margin-top:14px">Još nema troškova ovog mjeseca.</p>';
+
+  const search = $("search").value.trim().toLocaleLowerCase("hr");
+  const filtered = entries.filter(e =>
+    ($("filter").value === "all" || e.type === $("filter").value) &&
+    `${e.note} ${e.category}`.toLocaleLowerCase("hr").includes(search)
+  ).sort((a,b)=>b.date.localeCompare(a.date)||b.id.localeCompare(a.id));
+  $("count").textContent = `${filtered.length} / ${entries.length}`;
+  $("entries").innerHTML = filtered.length ? filtered.map(e=>`
+    <article class="entry">
+      <div>
+        <div class="entry-title">${escapeHTML(e.note || e.category)}</div>
+        <div class="entry-detail">${escapeHTML(e.category)} · ${
+          e.date.split("-").reverse().join(".")}.
+          · ${e.type==="income"?"Prihod":"Trošak"}</div>
+      </div>
+      <div class="entry-right">
+        <strong class="${e.type}">${e.type==="income"?"+":"−"} ${money(e.amount)}</strong>
+        <div>
+          <button class="secondary" data-edit="${escapeHTML(e.id)}">Uredi</button>
+          <button class="danger" data-delete="${escapeHTML(e.id)}">Izbriši</button>
+        </div>
+      </div>
+    </article>`).join("") :
+    '<p class="empty">Nema transakcija za ovaj odabir. Dodaj prvi unos ili promijeni filtre.</p>';
+}
+$("authForm").addEventListener("submit",async event=>{
+  event.preventDefault();
+  if(busy) return;
+  $("authError").textContent = "";
+  if(!globalThis.crypto?.subtle){
+    $("authError").textContent =
+      "Ovaj preglednik ne podržava šifriranje u ovom načinu otvaranja. Otvori aplikaciju u modernom pregledniku ili je posluži preko localhosta/HTTPS-a.";
+    return;
+  }
+  busy = true;
+  $("authSubmit").disabled = true;
+  try {
+    const raw = readStored();
+    const password = $("password").value;
+    if(raw){
+      const candidateVault = parseVault(raw);
+      const candidateKey = await derive(password,from64(candidateVault.salt));
+      const candidateData = await decrypt(candidateVault,candidateKey);
+      vault = candidateVault; key = candidateKey; data = candidateData;
+    } else {
+      if(password.length < 10) throw Error("Koristi najmanje 10 znakova.");
+      if(password !== $("confirmPassword").value)
+        throw Error("Lozinke se ne podudaraju.");
+      const salt = crypto.getRandomValues(new Uint8Array(16));
+      key = await derive(password,salt);
+      vault = {version:1,iterations:ITERATIONS,salt:bytes64(salt)};
+      await persist({version:1,entries:[],budgets:{}});
+    }
+    $("password").value = "";
+    $("confirmPassword").value = "";
+    $("auth").hidden = true;
+    $("app").hidden = false;
+    $("month").value = today().slice(0,7);
+    resetEntry(); render(); armLock();
+  } catch(error){
+    key = null; vault = null; data = null;
+    $("authError").textContent =
+      error.name === "OperationError"
+      ? "Lozinka nije točna ili je pohrana oštećena."
+      : error.message || "Otključavanje nije uspjelo.";
+  } finally {
+    busy = false;
+    $("authSubmit").disabled = false;
+  }
+});
+$("entryForm").addEventListener("submit",async event=>{
+  event.preventDefault();
+  if(busy) return;
+  try {
+    const amount = parseAmount($("amount").value);
+    const date = $("date").value;
+    if(!validDate(date)) throw Error("Odaberi ispravan datum.");
+    const entry = {
+      id:editId || crypto.randomUUID(),
+      type:$("type").value,amount,category:$("category").value,
+      date,note:$("note").value.trim()
+    };
+    const saved = await mutate(next=>{
+      const index = next.entries.findIndex(e=>e.id===entry.id);
+      if(index>=0) next.entries[index]=entry;
+      else next.entries.push(entry);
+    },"Transakcija je spremljena.");
+    if(saved){
+      $("month").value = date.slice(0,7);
+      resetEntry(); render();
+    }
+  } catch(error){ notify(error.message); }
+});
+$("budgetForm").addEventListener("submit",async event=>{
+  event.preventDefault();
+  try {
+    const value = $("budget").value.trim();
+    const amount = value ? parseAmount(value,true) : 0;
+    const month = $("month").value;
+    await mutate(next=>{
+      if(amount) next.budgets[month]=amount;
+      else delete next.budgets[month];
+    },"Budžet je spremljen.");
+  } catch(error){ notify(error.message); }
+});
+$("entries").addEventListener("click",async event=>{
+  const button = event.target.closest("button");
+  if(!button || busy || !data) return;
+  const id = button.dataset.edit || button.dataset.delete;
+  const entry = data.entries.find(e=>e.id===id);
+  if(!entry) return;
+  if(button.dataset.delete){
+    if(!confirm(`Izbrisati transakciju „${entry.note || entry.category}” (${money(entry.amount)})?`)) return;
+    const saved = await mutate(next=>{
+      next.entries=next.entries.filter(e=>e.id!==id);
+    },"Transakcija je izbrisana.");
+    if(saved && editId===id) resetEntry();
+  } else {
+    editId = id;
+    $("type").value = entry.type; setCategories();
+    $("category").value = entry.category;
+    $("amount").value = (entry.amount/100).toFixed(2).replace(".",",");
+    $("date").value = entry.date;
+    $("note").value = entry.note;
+    $("entryHeading").textContent = "Uredi transakciju";
+    $("saveEntry").textContent = "Spremi promjene";
+    $("cancelEdit").hidden = false;
+    $("entryForm").scrollIntoView({behavior:"smooth",block:"center"});
+  }
+});
+function download(content,filename,type){
+  const url = URL.createObjectURL(new Blob([content],{type}));
+  const link = document.createElement("a");
+  link.href = url; link.download = filename;
+  document.body.append(link); link.click(); link.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),10000);
+}
+$("backup").addEventListener("click",()=>{
+  if(busy || !vault) return;
+  download(JSON.stringify(vault,null,2),
+    `plusminusplus-kopija-${today()}.json`,"application/json");
+  notify("Kopija je pripremljena za preuzimanje. Za povrat treba ista lozinka.");
+});
+$("csv").addEventListener("click",()=>{
+  if(!data) return;
+  const cell = value => {
+    let s = String(value);
+    if(/^[=+\-@\t\r\n]/.test(s)) s="'"+s;
+    return '"'+s.replace(/"/g,'""')+'"';
+  };
+  const rows = [["Datum","Vrsta","Kategorija","Opis","Iznos EUR"],
+    ...monthEntries().sort((a,b)=>a.date.localeCompare(b.date)).map(e=>[
+      e.date,e.type==="income"?"Prihod":"Trošak",e.category,e.note,
+      ((e.type==="expense"?-1:1)*e.amount/100).toFixed(2).replace(".",",")
+    ])];
+  download("\ufeff"+rows.map(r=>r.map(cell).join(";")).join("\r\n"),
+    `plusminusplus-${$("month").value}.csv`,"text/csv;charset=utf-8");
+});
+function chooseRestore(){
+  if(busy) return;
+  $("restoreFile").value = "";
+  $("restoreFile").click();
+}
+$("restore").addEventListener("click",chooseRestore);
+$("restoreAuth").addEventListener("click",chooseRestore);
+$("restoreFile").addEventListener("change",async()=>{
+  const file = $("restoreFile").files[0];
+  if(!file || busy) return;
+  busy = true;
+  try {
+    if(file.size > 20000000) throw Error("Kopija je prevelika. Najviše 20 MB.");
+    const candidateVault = parseVault(await file.text());
+    // Lozinka kopije provjerava se prije zamjene postojeće pohrane.
+    const password = prompt("Unesi lozinku kojom je zaštićena ova kopija:");
+    if(password === null) return;
+    const candidateKey = await derive(password,from64(candidateVault.salt));
+    await decrypt(candidateVault,candidateKey);
+    if(readStored() && !confirm(
+      "Uvoz će zamijeniti cijeli novčanik na ovom pregledniku. " +
+      "Prethodno preuzmi kopiju ako želiš sačuvati postojeće podatke. Nastaviti?"
+    )) return;
+    localStorage.setItem(STORAGE,JSON.stringify(candidateVault));
+    busy = false;
+    lock();
+    notify("Kopija je uvezena. Otključaj je lozinkom kopije.");
+  } catch(error){
+    notify(error.name==="OperationError"
+      ? "Lozinka kopije nije točna ili je kopija oštećena."
+      : error.message || "Uvoz nije uspio.");
+  } finally { busy = false; armLock(); }
+});
+$("type").addEventListener("change",setCategories);
+$("cancelEdit").addEventListener("click",resetEntry);
+$("lock").addEventListener("click",lock);
+$("month").addEventListener("change",()=>{
+  if(!$("month").value) $("month").value=today().slice(0,7);
+  render();
+});
+$("search").addEventListener("input",render);
+$("filter").addEventListener("change",render);
+for(const name of ["pointerdown","keydown"])
+  document.addEventListener(name,armLock,{passive:true});
+
+// Drugi otvoreni prozor ne smije prepisati novije podatke starom verzijom.
+window.addEventListener("storage",event=>{
+  if(event.key===STORAGE){
+    if(busy) location.reload();
+    else {
+      lock();
+      notify("Pohrana je promijenjena u drugom prozoru. Ponovno otključaj novčanik.");
+    }
+  }
+});
+showAuth();
+</script>
+<script>
+if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./sw.js").then(() => navigator.serviceWorker.ready).then(() => {
+      document.getElementById("offlineStatus").textContent = "Spremno za offline rad";
+    }).catch(() => {
+      document.getElementById("offlineStatus").textContent = "Offline spremanje nije uspjelo. Pokušaj ponovno dok si online.";
+    });
+  });
+}
+</script>
+</body>
+</html>
